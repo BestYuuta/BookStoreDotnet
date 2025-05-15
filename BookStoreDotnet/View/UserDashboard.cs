@@ -177,13 +177,16 @@ namespace BookStoreDotnet.View
             if (response.Success)
             {
                 LoadMyRentals();
-                MessageBox.Show("Book returned successfully.");
+
+                decimal rentalFee = (decimal)response.Data;
+                MessageBox.Show($"Book returned successfully. Rental fee: {rentalFee} VND");
             }
             else
             {
-                MessageBox.Show("Failed to return book: " + response.Message);
+                MessageBox.Show("Failed to return book.");
             }
         }
+
 
         private void LoadMyRentals()
         {
@@ -194,6 +197,7 @@ namespace BookStoreDotnet.View
             {
                 showingRentals = true;
                 dataGridView1.DataSource = response.Data;
+                dataGridView1.Columns["UserId"].Visible = false;
                 dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
             else

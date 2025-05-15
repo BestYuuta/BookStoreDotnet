@@ -93,6 +93,15 @@
     <Compile Include="DTO\Rentals.cs" />
     <Compile Include="DTO\ResponseDTO.cs" />
     <Compile Include="DTO\User.cs" />
+    <Compile Include="Migrations\202505131439599_InitialCreate.cs" />
+    <Compile Include="Migrations\202505131439599_InitialCreate.Designer.cs">
+      <DependentUpon>202505131439599_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202505150844020_AddRentalFeeToRentals.cs" />
+    <Compile Include="Migrations\202505150844020_AddRentalFeeToRentals.Designer.cs">
+      <DependentUpon>202505150844020_AddRentalFeeToRentals.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="View\AdminDashboard.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -131,6 +140,12 @@
     <Compile Include="View\UserDashboard.Designer.cs">
       <DependentUpon>UserDashboard.cs</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="Migrations\202505131439599_InitialCreate.resx">
+      <DependentUpon>202505131439599_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202505150844020_AddRentalFeeToRentals.resx">
+      <DependentUpon>202505150844020_AddRentalFeeToRentals.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="View\AdminDashboard.resx">
       <DependentUpon>AdminDashboard.cs</DependentUpon>
     </EmbeddedResource>

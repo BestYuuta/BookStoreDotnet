@@ -71,13 +71,14 @@ namespace BookStoreDotnet.BLL
         {
             try
             {
+                decimal? rentalFee = rentalDAL.ReturnBook(rentalId);
                 int result = rentalDAL.ReturnBook(rentalId);
                 if (result > 0)
                 {
                     return new ResponseDTO
                     {
                         Success = true,
-                        Data = null,
+                        Data = rentalFee,
                         Message = "Book returned successfully"
                     };
                 }

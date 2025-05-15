@@ -15,6 +15,11 @@ namespace BookStoreDotnet.DAL
         {
             try
             {
+                var book = _context.Books.FirstOrDefault(b => b.Id == rentalDTO.BookId);
+                if (book == null || book.Stock <= 0)
+                {
+                    return 0;
+                }
                 var rental = new Rentals
                 {
                     UserId = rentalDTO.UserId,
@@ -23,9 +28,10 @@ namespace BookStoreDotnet.DAL
                     Status = Rentals.RentalStatus.Rented
                 };
                 _context.Rentals.Add(rental);
+                book.Stock -= 1;
                 return _context.SaveChanges();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return 0;
             }
@@ -39,6 +45,7 @@ namespace BookStoreDotnet.DAL
                     Id = r.Id,
                     UserId = r.UserId,
                     BookId = r.BookId,
+                    BookTitle = r.Book.Title,
                     RentDate = r.RentDate,
                     ReturnDate = r.ReturnDate,
                     Status = r.Status.ToString()
@@ -51,7 +58,16 @@ namespace BookStoreDotnet.DAL
             {
                 rental.ReturnDate = DateTime.Now;
                 rental.Status = Rentals.RentalStatus.Returned;
-                return _context.SaveChanges();
+                var days = (rental.ReturnDate.Value - rental.RentDate).TotalDays;
+                int roundedDays = (int)Math.Ceiling(days);
+                rental.RentalFee = roundedDays * 3000;
+                var book = _context.Books.FirstOrDefault(b => b.Id == rental.BookId);
+                if (book != null)
+                {
+                    book.Stock += 1;
+                }
+                _context.SaveChanges();
+                return (int)rental.RentalFee;
             }
             return 0;
         }

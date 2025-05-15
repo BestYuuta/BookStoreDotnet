@@ -66,7 +66,11 @@ namespace BookStoreDotnet.View
                 MessageBox.Show("Stock must be a valid number.");
                 return;
             }
-
+            if (stock < 1)
+            {
+                MessageBox.Show("Stock must be greater than or equal to 1.");
+                return;
+            }
             var book = new Books
             {
                 Title = title,
@@ -74,7 +78,6 @@ namespace BookStoreDotnet.View
                 Stock = stock,
                 BookCover = selectedImagePath
             };
-
             ResponseDTO response;
             if (bookId == -1)
             {
@@ -85,7 +88,6 @@ namespace BookStoreDotnet.View
                 book.Id = bookId.Value;
                 response = bookBLL.UpdateBook(book);
             }
-
             if (response.Success)
             {
                 this.Close();

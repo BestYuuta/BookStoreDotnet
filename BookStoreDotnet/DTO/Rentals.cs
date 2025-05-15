@@ -32,5 +32,7 @@ namespace Bookstore.DTO
         }
         [Required]
         public RentalStatus Status { get; set; } = RentalStatus.Rented;
+        [Required]
+        public decimal RentalFee { get; set; }
     }
 }
