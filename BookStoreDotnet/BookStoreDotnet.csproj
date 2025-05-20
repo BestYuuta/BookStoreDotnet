@@ -83,16 +83,9 @@
     <Compile Include="Config\BookStore.cs" />
     <Compile Include="Config\DBCreate.cs" />
     <Compile Include="Config\Session.cs" />
-    <Compile Include="DAL\BookDAL.cs" />
-    <Compile Include="DAL\RentalDAL.cs" />
-    <Compile Include="DAL\UserDAL.cs" />
-    <Compile Include="DTO\AccountDTO.cs" />
-    <Compile Include="DTO\BookDTO.cs" />
-    <Compile Include="DTO\Books.cs" />
-    <Compile Include="DTO\RentalDTO.cs" />
-    <Compile Include="DTO\Rentals.cs" />
-    <Compile Include="DTO\ResponseDTO.cs" />
-    <Compile Include="DTO\User.cs" />
+    <Compile Include="DB\Books.cs" />
+    <Compile Include="DB\Rentals.cs" />
+    <Compile Include="DB\User.cs" />
     <Compile Include="Migrations\202505131439599_InitialCreate.cs" />
     <Compile Include="Migrations\202505131439599_InitialCreate.Designer.cs">
       <DependentUpon>202505131439599_InitialCreate.cs</DependentUpon>

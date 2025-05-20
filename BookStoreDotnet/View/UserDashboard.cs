@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Forms;
 using BookStoreDotnet.BLL;
 using BookStoreDotnet.Config;
-using BookStoreDotnet.DTO;
 
 namespace BookStoreDotnet.View
 {
@@ -39,36 +39,25 @@ namespace BookStoreDotnet.View
                 return;
             }
 
-            ResponseDTO response;
+            var books = keyword == string.Empty
+                ? bookBLL.GetBooks()
+                : selectedOption == "Find by Title"
+                    ? bookBLL.GetBookByTitle(keyword)
+                    : selectedOption == "Find by Author"
+                        ? bookBLL.GetBookByAuthor(keyword)
+                        : null;
 
-            if (string.IsNullOrEmpty(keyword))
-            {
-                response = bookBLL.GetBooks();
-            }
-            else if (selectedOption == "Find by Title")
-            {
-                response = bookBLL.GetBookByTitle(keyword);
-            }
-            else if (selectedOption == "Find by Author")
-            {
-                response = bookBLL.GetBookByAuthor(keyword);
-            }
-            else
-            {
-                MessageBox.Show("Invalid search option.");
-                return;
-            }
-
-            if (response.Success)
+            if (books != null)
             {
                 showingRentals = false;
-                dataGridView1.DataSource = response.Data;
-                dataGridView1.Columns["BookCover"].Visible = false;
+                dataGridView1.DataSource = books;
+                if (dataGridView1.Columns.Contains("BookCover"))
+                    dataGridView1.Columns["BookCover"].Visible = false;
                 dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
             else
             {
-                MessageBox.Show("Search failed: " + response.Message);
+                MessageBox.Show("Search failed.");
             }
         }
 
@@ -114,36 +103,26 @@ namespace BookStoreDotnet.View
             int bookId = Convert.ToInt32(dataGridView1.SelectedRows[0].Cells["Id"].Value);
             int userId = Session.UserID;
 
-            var checkResponse = rentalBLL.IsBookRentedByUser(userId, bookId);
-            if (!checkResponse.Success)
+            bool? isAlreadyRented = rentalBLL.IsBookRentedByUser(userId, bookId);
+            if (isAlreadyRented == null)
             {
-                MessageBox.Show("Failed to check rental status: " + checkResponse.Message);
+                MessageBox.Show("Failed to check rental status.");
                 return;
             }
-
-            bool isAlreadyRented = Convert.ToBoolean(checkResponse.Data);
-            if (isAlreadyRented)
+            if (isAlreadyRented == true)
             {
                 MessageBox.Show("You have already rented this book and haven't returned it yet.");
                 return;
             }
 
-            RentalDTO rental = new RentalDTO
-            {
-                UserId = userId,
-                BookId = bookId,
-                RentDate = DateTime.Now,
-                Status = "Rented"
-            };
-
-            var rentResponse = rentalBLL.RentBook(rental);
-            if (rentResponse.Success)
+            bool success = rentalBLL.RentBook(userId, bookId);
+            if (success)
             {
                 MessageBox.Show("Book rented successfully!");
             }
             else
             {
-                MessageBox.Show("Rent failed: " + rentResponse.Message);
+                MessageBox.Show("Failed to rent book.");
             }
         }
 
@@ -172,14 +151,12 @@ namespace BookStoreDotnet.View
                 return;
             }
 
-            var response = rentalBLL.ReturnBook(rentalId);
+            decimal? rentalFee = rentalBLL.ReturnBook(rentalId);
 
-            if (response.Success)
+            if (rentalFee.HasValue)
             {
                 LoadMyRentals();
-
-                decimal rentalFee = (decimal)response.Data;
-                MessageBox.Show($"Book returned successfully. Rental fee: {rentalFee} VND");
+                MessageBox.Show($"Book returned successfully. Rental fee: {rentalFee.Value} VND");
             }
             else
             {
@@ -187,23 +164,32 @@ namespace BookStoreDotnet.View
             }
         }
 
-
         private void LoadMyRentals()
         {
             int userId = Session.UserID;
-            var response = rentalBLL.GetRentalsByUserId(userId);
+            var rentals = rentalBLL.GetRentalsByUserId(userId);
 
-            if (response.Success)
+            if (rentals != null)
             {
                 showingRentals = true;
-                dataGridView1.DataSource = response.Data;
-                dataGridView1.Columns["UserId"].Visible = false;
+                var rentalDisplay = rentals.Select(r => new
+                {
+                    r.Id,
+                    BookTitle = r.Book?.Title,
+                    r.RentDate,
+                    r.ReturnDate,
+                    r.Status,
+                    r.RentalFee
+                }).ToList();
+
+                dataGridView1.DataSource = rentalDisplay;
                 dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
             else
             {
-                MessageBox.Show("Failed to load rentals: " + response.Message);
+                MessageBox.Show("Failed to load rentals.");
             }
         }
+
     }
 }

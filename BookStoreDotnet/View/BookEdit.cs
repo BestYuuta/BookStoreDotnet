@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Bookstore.DTO;
 using BookStoreDotnet.BLL;
-using BookStoreDotnet.DTO;
 
 namespace BookStoreDotnet.View
 {
@@ -71,6 +70,7 @@ namespace BookStoreDotnet.View
                 MessageBox.Show("Stock must be greater than or equal to 1.");
                 return;
             }
+
             var book = new Books
             {
                 Title = title,
@@ -78,30 +78,32 @@ namespace BookStoreDotnet.View
                 Stock = stock,
                 BookCover = selectedImagePath
             };
-            ResponseDTO response;
+
+            bool success;
             if (bookId == -1)
             {
-                response = bookBLL.AddBook(book);
+                success = bookBLL.AddBook(book);
             }
             else
             {
                 book.Id = bookId.Value;
-                response = bookBLL.UpdateBook(book);
+                success = bookBLL.UpdateBook(book);
             }
-            if (response.Success)
+
+            if (success)
             {
-                this.Close();
                 MessageBox.Show(bookId == -1 ? "Book added successfully!" : "Book updated successfully!");
+                this.Close();
             }
             else
             {
-                MessageBox.Show("Operation failed: " + response.Message);
+                MessageBox.Show("Operation failed.");
             }
         }
         private void LoadBookData(int bookId)
         {
-            var response = bookBLL.GetBookById(bookId);
-            if (response.Success && response.Data is BookDTO book)
+            var book = bookBLL.GetBookById(bookId);
+            if (book != null)
             {
                 txtTitle.Text = book.Title;
                 txtAuthor.Text = book.Author;
@@ -116,7 +118,7 @@ namespace BookStoreDotnet.View
             }
             else
             {
-                MessageBox.Show("Failed to load book: " + response.Message);
+                MessageBox.Show("Failed to load book.");
                 this.Close();
             }
         }

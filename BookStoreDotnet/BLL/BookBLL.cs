@@ -1,187 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Bookstore.DTO;
-using BookStoreDotnet.DAL;
-using BookStoreDotnet.DTO;
+using BookStoreDotnet.Config; 
 
 namespace BookStoreDotnet.BLL
 {
     public class BookBLL
     {
-        private static readonly BookDAL bookDAL = new BookDAL();
-        public ResponseDTO GetBooks()
+        private readonly BookStore _context;
+
+        public BookBLL()
         {
-            try
-            {
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = bookDAL.GetBooks(),
-                    Message = "Books retrieved successfully"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            _context = new BookStore();
         }
-        public ResponseDTO GetBookByTitle(string title)
+
+        public List<Books> GetBooks()
         {
-            try
-            {
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = bookDAL.GetBookByTitle(title),
-                    Message = "Books retrieved successfully"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            return _context.Books.ToList();
         }
-        public ResponseDTO GetBookByAuthor(string author)
+
+        public List<Books> GetBookByTitle(string title)
         {
-            try
-            {
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = bookDAL.GetBookByAuthor(author),
-                    Message = "Books retrieved successfully"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            return _context.Books
+                .Where(b => string.IsNullOrEmpty(title) || b.Title.Contains(title))
+                .ToList();
         }
-        public ResponseDTO AddBook(Books book)
+
+        public List<Books> GetBookByAuthor(string author)
         {
-            try
-            {
-                if (bookDAL.AddBook(book) > 0)
-                {
-                    return new ResponseDTO
-                    {
-                        Success = true,
-                        Data = book,
-                        Message = "Book added successfully"
-                    };
-                }
-                else
-                {
-                    throw new Exception("Failed to add book");
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            return _context.Books
+                .Where(b => string.IsNullOrEmpty(author) || b.Author.Contains(author))
+                .ToList();
         }
-        public ResponseDTO UpdateBook(Books book)
+
+        public Books GetBookById(int id)
         {
-            try
-            {
-                int result = bookDAL.UpdateBook(book);
-                if (result > 0)
-                {
-                    return new ResponseDTO
-                    {
-                        Success = true,
-                        Data = book,
-                        Message = "Book updated successfully"
-                    };
-                }
-                else
-                {
-                    throw new Exception("Failed to update book");
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            return _context.Books.FirstOrDefault(b => b.Id == id);
         }
-        public ResponseDTO DeleteBook(int id)
+
+        public bool AddBook(Books book)
         {
-            try
-            {
-                bookDAL.DeleteBook(id);
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = null,
-                    Message = "Book deleted successfully"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            _context.Books.Add(book);
+            return _context.SaveChanges() > 0;
         }
-        public ResponseDTO GetBookById(int id)
+
+        public bool UpdateBook(Books book)
         {
-            try
-            {
-                var book = bookDAL.GetBookById(id);
-                if (book != null)
-                {
-                    return new ResponseDTO
-                    {
-                        Success = true,
-                        Data = book,
-                        Message = "Book retrieved successfully"
-                    };
-                }
-                else
-                {
-                    throw new Exception("Book not found");
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            var existing = _context.Books.FirstOrDefault(b => b.Id == book.Id);
+            if (existing == null) return false;
+
+            existing.Title = book.Title;
+            existing.Author = book.Author;
+            existing.Stock = book.Stock;
+            existing.BookCover = book.BookCover;
+
+            return _context.SaveChanges() > 0;
+        }
+
+        public bool DeleteBook(int id)
+        {
+            var book = _context.Books.FirstOrDefault(b => b.Id == id);
+            if (book == null) return false;
+
+            _context.Books.Remove(book);
+            return _context.SaveChanges() > 0;
         }
     }
 }

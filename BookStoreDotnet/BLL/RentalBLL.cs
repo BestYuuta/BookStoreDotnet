@@ -1,128 +1,81 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BookStoreDotnet.DAL;
-using BookStoreDotnet.DTO;
+using Bookstore.DTO;
+using BookStoreDotnet.Config;
 
 namespace BookStoreDotnet.BLL
 {
     public class RentalBLL
     {
-        private static readonly RentalDAL rentalDAL = new RentalDAL();
-        public ResponseDTO RentBook(RentalDTO rentalDTO)
+        private readonly BookStore _context;
+
+        public RentalBLL()
         {
-            try
-            {
-                int result = rentalDAL.RentBook(rentalDTO);
-                if (result > 0)
-                {
-                    return new ResponseDTO
-                    {
-                        Success = true,
-                        Data = null,
-                        Message = "Book rented successfully"
-                    };
-                }
-                else
-                {
-                    return new ResponseDTO
-                    {
-                        Success = false,
-                        Data = null,
-                        Message = "Failed to rent book"
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            _context = new BookStore();
         }
-        public ResponseDTO GetRentalsByUserId(int userId)
+
+        public bool RentBook(int userId, int bookId)
         {
-            try
+            var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
+            if (book == null || book.Stock <= 0)
             {
-                var rentals = rentalDAL.GetRentalsByUserId(userId);
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = rentals,
-                    Message = "Rentals retrieved successfully"
-                };
+                return false;
             }
-            catch (Exception ex)
+
+            var rental = new Rentals
             {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+                UserId = userId,
+                BookId = bookId,
+                RentDate = DateTime.Now,
+                Status = Rentals.RentalStatus.Rented
+            };
+
+            _context.Rentals.Add(rental);
+            book.Stock -= 1;
+            return _context.SaveChanges() > 0;
         }
-        public ResponseDTO ReturnBook(int rentalId)
+
+        public List<Rentals> GetRentalsByUserId(int userId)
         {
-            try
-            {
-                decimal? rentalFee = rentalDAL.ReturnBook(rentalId);
-                int result = rentalDAL.ReturnBook(rentalId);
-                if (result > 0)
-                {
-                    return new ResponseDTO
-                    {
-                        Success = true,
-                        Data = rentalFee,
-                        Message = "Book returned successfully"
-                    };
-                }
-                else
-                {
-                    return new ResponseDTO
-                    {
-                        Success = false,
-                        Data = null,
-                        Message = "Failed to return book"
-                    };
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
-            }
+            return _context.Rentals
+                .Where(r => r.UserId == userId)
+                .Include(r => r.Book)
+                .ToList();
         }
-        public ResponseDTO IsBookRentedByUser(int userId, int bookId)
+
+        public decimal? ReturnBook(int rentalId)
         {
-            try
+            var rental = _context.Rentals.FirstOrDefault(r => r.Id == rentalId);
+            if (rental == null || rental.Status == Rentals.RentalStatus.Returned)
             {
-                bool isRented = rentalDAL.IsBookRentedByUser(userId, bookId);
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = isRented,
-                    Message = "Check completed successfully"
-                };
+                return null;
             }
-            catch (Exception ex)
+
+            rental.ReturnDate = DateTime.Now;
+            rental.Status = Rentals.RentalStatus.Returned;
+
+            var days = (rental.ReturnDate.Value - rental.RentDate).TotalDays;
+            int roundedDays = (int)Math.Ceiling(days);
+            rental.RentalFee = roundedDays * 3000;
+
+            var book = _context.Books.FirstOrDefault(b => b.Id == rental.BookId);
+            if (book != null)
             {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
+                book.Stock += 1;
             }
+
+            _context.SaveChanges();
+            return rental.RentalFee;
+        }
+
+        public bool IsBookRentedByUser(int userId, int bookId)
+        {
+            return _context.Rentals.Any(r =>
+                r.UserId == userId &&
+                r.BookId == bookId &&
+                r.Status == Rentals.RentalStatus.Rented);
         }
     }
 }

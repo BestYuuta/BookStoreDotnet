@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using BookStoreDotnet.BLL;
 using BookStoreDotnet.Config;
-using BookStoreDotnet.DTO;
 using BookStoreDotnet.View;
 
 namespace BookStoreDotnet
@@ -31,9 +30,9 @@ namespace BookStoreDotnet
         {
             string username = txtUsername.Text;
             string password = txtPassword.Text;
-            ResponseDTO response = userBLL.Login(username, password);
 
-            if (response.Success)
+            string message;
+            if (userBLL.Login(username, password, out message))
             {
                 this.Hide();
                 if (Session.UserRole == "admin")
@@ -47,14 +46,16 @@ namespace BookStoreDotnet
                     UserDashboard userDashboard = new UserDashboard();
                     userDashboard.FormClosed += (s, args) => this.Close();
                     userDashboard.Show();
-                }
-                MessageBox.Show("Login successful");
+                }    
+
+                MessageBox.Show(message);
             }
             else
             {
-                MessageBox.Show(response.Message);
+                MessageBox.Show(message);
             }
         }
+
 
         private void btnReg_Click(object sender, EventArgs e)
         {

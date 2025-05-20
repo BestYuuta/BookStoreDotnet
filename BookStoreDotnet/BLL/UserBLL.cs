@@ -1,20 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Bookstore.DTO;
 using BookStoreDotnet.Config;
-using BookStoreDotnet.DAL;
-using BookStoreDotnet.DTO;
+using Bookstore.DTO;
 
 namespace BookStoreDotnet.BLL
 {
     public class UserBLL
     {
-        private static readonly UserDAL userDAL = new UserDAL();
+        private readonly BookStore _context = new BookStore();
 
-        public ResponseDTO Register(string name, string username, string password)
+        public bool Register(string name, string username, string password, out string message)
         {
             try
             {
@@ -30,7 +25,7 @@ namespace BookStoreDotnet.BLL
                 if (string.IsNullOrWhiteSpace(password) || password.Length < 4)
                     throw new Exception("Password must be at least 4 characters");
 
-                if (userDAL.IsUsernameExist(username))
+                if (_context.Users.Any(u => u.Username == username))
                     throw new Exception("Username already exists");
 
                 var user = new User
@@ -38,60 +33,46 @@ namespace BookStoreDotnet.BLL
                     Name = name,
                     Username = username,
                     Password = BCrypt.Net.BCrypt.EnhancedHashPassword(password),
-                    Role = "user", 
+                    Role = "user",
                     CreatedAt = DateTime.Now
                 };
 
-                int result = userDAL.AddUser(user);
+                _context.Users.Add(user);
+                _context.SaveChanges();
 
-                if (result == 0)
-                    throw new Exception("Failed to register user");
-
-                return new ResponseDTO
-                {
-                    Success = true,
-                    Data = null,
-                    Message = "Registration successful"
-                };
+                message = "Registration successful";
+                return true;
             }
             catch (Exception ex)
             {
-                return new ResponseDTO
-                {
-                    Success = false,
-                    Data = null,
-                    Message = ex.Message
-                };
+                message = ex.Message;
+                return false;
             }
         }
 
-        public ResponseDTO Login(string username, string password)
+        public bool Login(string username, string password, out string message)
         {
             try
             {
-                var user = userDAL.GetUserByUsername(username);
+                var user = _context.Users.FirstOrDefault(u => u.Username == username);
                 if (user == null || !BCrypt.Net.BCrypt.EnhancedVerify(password, user.Password))
                     throw new Exception("Wrong username or password");
 
                 Session.SetSession(user.Id, user.Name, user.Role);
-                return new ResponseDTO { Success = true, Data = null, Message = "Login successful" };
+
+                message = "Login successful";
+                return true;
             }
             catch (Exception ex)
             {
-                return new ResponseDTO { Success = false, Data = null, Message = ex.Message };
+                message = ex.Message;
+                return false;
             }
         }
-        public ResponseDTO GetUserById(int id)
+
+        public User GetUserById(int id)
         {
-            try
-            {
-                var user = userDAL.GetUserById(id);
-                return new ResponseDTO { Success = true, Data = user, Message = "User fetched successfully" };
-            }
-            catch (Exception ex)
-            {
-                return new ResponseDTO { Success = false, Data = null, Message = ex.Message };
-            }
+            return _context.Users.FirstOrDefault(u => u.Id == id);
         }
     }
 }

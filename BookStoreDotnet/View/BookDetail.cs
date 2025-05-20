@@ -2,9 +2,9 @@
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using Bookstore.DTO;
 using BookStoreDotnet.BLL;
 using BookStoreDotnet.Config;
-using BookStoreDotnet.DTO;
 
 namespace BookStoreDotnet.View
 {
@@ -23,8 +23,8 @@ namespace BookStoreDotnet.View
             string role = Session.UserRole;
             btnSubmit.Text = (role == "admin") ? "Edit Book" : "Rent Book";
 
-            var response = bookBLL.GetBookById(bookId);
-            if (response.Success && response.Data is BookDTO book)
+            var book = bookBLL.GetBookById(bookId);
+            if (book != null)
             {
                 txtBookId.Text = book.Id.ToString();
                 txtTitle.Text = book.Title;
@@ -44,7 +44,7 @@ namespace BookStoreDotnet.View
             }
             else
             {
-                MessageBox.Show("Failed to load book: " + response.Message);
+                MessageBox.Show("Failed to load book.");
                 this.Close();
             }
         }
@@ -57,55 +57,51 @@ namespace BookStoreDotnet.View
         private void btnSubmit_Click(object sender, EventArgs e)
         {
             string role = Session.UserRole;
+            int bookId = Convert.ToInt32(txtBookId.Text);
 
             if (role == "admin")
             {
-                int bookId = Convert.ToInt32(txtBookId.Text);
                 BookEdit editForm = new BookEdit(bookId);
                 editForm.FormClosed += (s, args) => LoadBookDetail(bookId);
                 editForm.Show();
             }
             else
             {
-                int bookId = Convert.ToInt32(txtBookId.Text);
                 int userId = Session.UserID;
-
                 RentalBLL rentalBLL = new RentalBLL();
-                var checkResponse = rentalBLL.IsBookRentedByUser(userId, bookId);
 
-                if (!checkResponse.Success)
+                bool? isRented = rentalBLL.IsBookRentedByUser(userId, bookId);
+                if (isRented == null)
                 {
-                    MessageBox.Show("Failed to check rental status: " + checkResponse.Message);
+                    MessageBox.Show("Failed to check rental status.");
                     return;
                 }
 
-                bool alreadyRented = Convert.ToBoolean(checkResponse.Data);
-                if (alreadyRented)
+                if (isRented == true)
                 {
                     MessageBox.Show("You have already rented this book and haven't returned it.");
                     return;
                 }
 
-                RentalDTO rental = new RentalDTO
+                var rental = new Rentals
                 {
                     UserId = userId,
                     BookId = bookId,
                     RentDate = DateTime.Now,
-                    Status = "Rented"
+                    Status = Rentals.RentalStatus.Rented
                 };
 
-                var rentResponse = rentalBLL.RentBook(rental);
-                if (rentResponse.Success)
+                bool rentSuccess = rentalBLL.RentBook(Session.UserID, bookId);
+                if (rentSuccess)
                 {
                     this.Close();
                     MessageBox.Show("Book rented successfully!");
                 }
                 else
                 {
-                    MessageBox.Show("Rent failed: " + rentResponse.Message);
+                    MessageBox.Show("Rent failed.");
                 }
             }
         }
-
     }
 }

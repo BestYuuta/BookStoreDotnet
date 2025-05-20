@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using BookStoreDotnet.BLL;
-using BookStoreDotnet.DTO;
 
 namespace BookStoreDotnet.View
 {
@@ -32,21 +31,20 @@ namespace BookStoreDotnet.View
             string name = txtName.Text.Trim();
             string username = txtUsername.Text.Trim();
             string password = txtPassword.Text;
+            string message;
 
             UserBLL userBLL = new UserBLL();
-            ResponseDTO response = userBLL.Register(name, username, password);
-
-            if (response.Success)
+            if (userBLL.Register(name,username, password, out message))
             {
+                MessageBox.Show(message);
                 this.Hide();
                 Form1 loginForm = new Form1();
                 loginForm.FormClosed += (s, args) => this.Close();
                 loginForm.Show();
-                MessageBox.Show("Register successful!");
             }
             else
             {
-                MessageBox.Show(response.Message);
+                MessageBox.Show(message);
             }
         }
     }
